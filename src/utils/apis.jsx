@@ -56,7 +56,6 @@ export const apis = {
   login: `${configModalUsaWin}login`,
   // https://socket.winzywin.com/public/api/profile?id=1
 
-
   profile: `${configModalUsaWin}profile?id=`,
   changePassword: `${configModalUsaWin}changePassword`,
   fundTransfer: `${configModalUsaWin}main_wallet_transfers`,
@@ -205,8 +204,13 @@ export const apis = {
   updateProfile: `${configModalUsaWin}update_profile`,
   betHisotry: `${configModalUsaWin}history?user_id=`,
   getPaymentMethod: `${configModalUsaWin}adminMethodPayment?type=`,
+  // https://socket.winzywin.com/api/manual_payin_option
+  getPaymentDetails: `${configModalUsaWin}manual_payin_option`,
   add_amount: `${configModalUsaWin}add_amount`,
-  withdrawal_request: `${configModalUsaWin}withdrawal_request`,
+  // https://socket.winzywin.com/api/payin
+  payin: `${configModalUsaWin}payin`,
+
+  withdrawal_request: `${configModalUsaWin}withdrawRequest`,
   avatar_request: `${configModalUsaWin}image_all`,
   avatarUpdate_request: `${configModalUsaWin}update_avatars`,
   gameRule_request: `${configModalUsaWin}getGameRules`,

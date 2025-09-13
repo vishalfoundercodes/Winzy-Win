@@ -9,11 +9,12 @@ import { apis } from "../utils/apis";
 const YourDepositHistoryModal = ({ title, onClose }) => {
   const [history, setHistory] = useState([]);
   const { get } = useApi();
-  const userid = localStorage.getItem("userid");
+  const userid = localStorage.getItem("userId");
 
   const fetchData = async () => {
     try {
       const res = await get(`${apis?.deposit_history}${userid}`);
+      console.log("res",res)
       setHistory(res?.data?.data || []);
     } catch (error) {
       console.error("Error fetching deposit history:", error);
@@ -26,11 +27,11 @@ const YourDepositHistoryModal = ({ title, onClose }) => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 0:
-        return <span className="text-yellow-400">Pending</span>;
       case 1:
-        return <span className="text-green-400">Approved</span>;
+        return <span className="text-yellow-400">Pending</span>;
       case 2:
+        return <span className="text-green-400">Approved</span>;
+      case 3:
         return <span className="text-red-400">Rejected</span>;
       default:
         return <span className="text-gray-300">Unknown</span>;
@@ -39,7 +40,10 @@ const YourDepositHistoryModal = ({ title, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex justify-center items-center">
-      <div className="bg-[#3A3D51] w-[90%] max-w-xl rounded-xl relative shadow-xl">
+      <div
+        className="bg-[#3A3D51] w-[90%] max-w-xl rounded-xl relative shadow-xl"
+        onClick={(e) => e.stopPropagation()} // 🚀 stops clicks inside modal from closing
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-6">
           <h2 className="text-lg font-semibold text-white">{title}</h2>

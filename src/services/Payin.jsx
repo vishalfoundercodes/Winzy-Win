@@ -304,44 +304,50 @@ import useApi from "../hooks/useApi";
 import { FaTimes } from "react-icons/fa";
 import { FaRegCopy } from "react-icons/fa";
 
-const PayinModal = ({ isOpen, onClose,rechargeType }) => {
+const PayinModal = ({
+  isOpen,
+  onClose,
+  rechargeType,
+  initialAmount,
+  profileData,
+}) => {
   if (!isOpen) return null;
 
-  const userid = localStorage.getItem("userid");
+  const userid = localStorage.getItem("userId");
   const { get } = useApi();
   const [type] = useState(2);
   const [typeData, setTypeData] = useState(null);
   const [preview, setPreview] = useState("");
 
-  useEffect(()=>{
-    console.log("recharge type:",rechargeType)
-  },[isOpen])
+  useEffect(() => {
+    console.log("recharge type:", rechargeType);
+  }, [isOpen]);
 
   const formik = useFormik({
-    // initialValues: {
-    //   amount: "",
-    //   screenshot: "",
-    // },
-    // validationSchema: Yup.object({
-    //   amount: Yup.string()
-    //     .matches(/^\d+$/, "Amount must contain only digits")
-    //     .required("Amount is required"),
-    //   screenshot: Yup.string().required("Screenshot is required"),
-    // }),
-
     initialValues: {
-      amount: "",
-      utr_no: "", // renamed from screenshot
+      amount: initialAmount || "",
+      screenshot: "",
     },
     validationSchema: Yup.object({
       amount: Yup.string()
         .matches(/^\d+$/, "Amount must contain only digits")
         .required("Amount is required"),
-      utr_no: Yup.string()
-        .matches(/^\d{12}$/, "UTR number must be exactly 12 digits")
-        .required("UTR number is required"),
-      // renamed from screenshot
+      screenshot: Yup.string().required("Screenshot is required"),
     }),
+
+    // initialValues: {
+    //   amount: "",
+    //   utr_no: "", // renamed from screenshot
+    // },
+    // validationSchema: Yup.object({
+    //   amount: Yup.string()
+    //     .matches(/^\d+$/, "Amount must contain only digits")
+    //     .required("Amount is required"),
+    //   utr_no: Yup.string()
+    //     .matches(/^\d{12}$/, "UTR number must be exactly 12 digits")
+    //     .required("UTR number is required"),
+    //   // renamed from screenshot
+    // }),
 
     // if(amount==500){
     //   alert("Amount should be greater than 500")
@@ -351,7 +357,7 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
       const payload = {
         ...values,
         user_id: userid,
-        recharge_type: rechargeType || "normal",
+        type: "1",
       };
 
       // console.log("recharge  payload for amount:", payload)
@@ -361,15 +367,15 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
       // Convert amount to number for comparison
       const amountNumber = parseInt(payload.amount, 10);
 
-      if (amountNumber < 500) {
-        toast.warn("Minimum amount is 500");
+      if (amountNumber < profileData?.minimum_deposit) {
+        toast.warn(`Minimum amount is ${profileData?.minimum_deposit}`);
         return; // ✅ STOP form submission
       }
 
       try {
-        console.log("payload of payin:",payload)
+        console.log("payload of payin:", payload);
         const res = await axios.post(`${apis?.add_amount}`, payload);
-        console.log("recharge res:",res)
+        console.log("recharge res:", res);
         toast.success("Recharge submitted successfully");
         resetForm();
         setPreview("");
@@ -378,7 +384,7 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
         console.error(err);
         if (err.status == 422) {
           toast.error(err.response.data.errors);
-        } 
+        }
         // alert("Failed to submit form");
       }
     },
@@ -396,13 +402,16 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
   };
 
   useEffect(() => {
-    get(`${apis?.getPaymentMethod}${type}`)
+    get(`${apis?.getPaymentDetails}`)
       .then((res) => {
-        if (res?.data?.success) {
-          setTypeData(res.data);
+        console.log("res1", res);
+        if (res?.data?.success || res.status === 200) {
+          console.log("res2", res.data.data[0]);
+          setTypeData(res.data.data[0]);
         }
       })
       .catch(console.error);
+      profileData && console.log("profile data in payin modal:",profileData)
   }, []);
 
   const fileInputRef = useRef(null);
@@ -412,7 +421,10 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       {/* <div className="relative bg-[#2c2f4a] w-full max-w-80 rounded-2xl shadow-2xl p-6 text-white h-[80%]"> */}
       {/* <div className="relative bg-[#2c2f4a] w-full max-w-80 rounded-2xl shadow-2xl text-white  xxs:h-[60%] flex flex-col  "> */}
-      <div className="relative bg-[#2c2f4a] w-full max-w-80 max-h-[90vh] rounded-2xl shadow-2xl text-white flex flex-col">
+      <div
+        className="relative bg-[#2c2f4a] w-full max-w-80 max-h-[90vh] rounded-2xl shadow-2xl text-white flex flex-col"
+        onClick={(e) => e.stopPropagation()} // 🚀 stops clicks inside modal from closing
+      >
         {/* Close Button */}
         {/* Close Button */}
         <button
@@ -438,15 +450,15 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
                 {/* <p className="text-sm">{typeData?.name}</p> */}
                 <p
                   className="text-sm truncate max-w-[160px]"
-                  title={typeData?.name}
+                  title={typeData?.upi_id}
                 >
-                  {typeData?.name?.slice(0, 10)}
-                  {typeData?.name?.length > 10 ? "..." : ""}
+                  {typeData?.upi_id?.slice(0, 10)}
+                  {typeData?.upi_id?.length > 10 ? "..." : ""}
                 </p>
 
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(typeData?.name || "");
+                    navigator.clipboard.writeText(typeData?.upi_id || "");
                     toast.success("Copied to clipboard!", {
                       position: "top-center",
                       autoClose: 1500,
@@ -470,14 +482,23 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
           {/* Form */}
           <form onSubmit={formik.handleSubmit} className="space-y-4">
             <div>
-              <p className="text-sm font-semibold text-gray-400 mb-1">
+              {/* <p className="text-sm font-semibold text-gray-400 mb-1">
                 MINIMUM RECHARGE:{" "}
-                <span className="text-white font-bold">500</span>
+                <span className="text-white font-bold">
+                  {profileData.minimum_deposit}
+                </span>
+              </p> */}
+              <p className="text-sm font-semibold text-gray-400 mb-1">
+                Amount:{" "}
+                <span className="text-white font-bold">
+                  {formik.values.amount}
+                </span>
               </p>
-              <label className="text-sm mb-1 block">Amount</label>
+              {/* <label className="text-sm mb-1 block">Amount</label>
               <input
                 type="text"
                 name="amount"
+                readOnly
                 value={formik.values.amount}
                 onChange={(e) => {
                   const onlyDigits = e.target.value.replace(/\D/g, "");
@@ -491,10 +512,10 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
                 <p className="text-red-400 text-xs mt-1">
                   {formik.errors.amount}
                 </p>
-              )}
+              )} */}
 
               {/* Quick Amount Buttons */}
-              <div className="flex flex-wrap gap-2 mt-2">
+              {/* <div className="flex flex-wrap gap-2 mt-2">
                 {[500, 1000, 2000, 5000, 10000].map((val) => (
                   <button
                     key={val}
@@ -516,11 +537,11 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
                     {val}
                   </button>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             {/* upload screen shot */}
-            {/* <div>
+            <div>
               <label className="text-sm block mb-1">Upload Screenshot</label>
               <input
                 ref={fileInputRef}
@@ -556,37 +577,11 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
                   </button>
                 </div>
               )}
-            </div> */}
+            </div>
 
             {/* Utr input */}
-            <div>
+            {/* <div>
               <label className="text-sm block mb-1">UTR Number</label>
-              {/* <input
-                type="text"
-                name="utr_no"
-                value={formik.values.utr_no}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                placeholder="Enter UTR number"
-                className="w-full px-4 py-2 rounded-lg bg-[#4c5169] text-white border border-gray-500 focus:outline-none"
-              /> */}
-
-              {/* <input
-                type="text"
-                name="utr_no"
-                value={formik.values.utr_no}
-                onChange={(e) => {
-                  const alphanumericOnly = e.target.value.replace(
-                    /[^a-zA-Z0-9]/g,
-                    ""
-                  );
-                  formik.setFieldValue("utr_no", alphanumericOnly);
-                }}
-                onBlur={formik.handleBlur}
-                placeholder="Enter UTR number"
-                className="w-full px-4 py-2 rounded-lg bg-[#4c5169] text-white border border-gray-500 focus:outline-none"
-              /> */}
-
               <input
                 type="text"
                 name="utr_no"
@@ -606,7 +601,7 @@ const PayinModal = ({ isOpen, onClose,rechargeType }) => {
                   {formik.errors.utr_no}
                 </p>
               )}
-            </div>
+            </div> */}
 
             <button
               type="submit"

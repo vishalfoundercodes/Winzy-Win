@@ -86,7 +86,7 @@ export default function Header({
       .catch(console.error);
   };
 
-  console.log(`api of profile:${apis?.profile}${userid}`);
+  // console.log(`api of profile:${apis?.profile}${userid}`);
   const profileHandler = () => {
     get(`${apis?.profile}${userid}`)
       .then((res) => {

@@ -18,6 +18,7 @@ import YourWithdrawHistoryModal from "./YourWithdrawHistoryModal"
 import EKYCPopUp from "./EKYCPopUp";
 import { toast } from "react-toastify";
 import { FaUserShield } from "react-icons/fa"; 
+import AmountModal from "./AddAmount";
 
 function MenuListModal({
   isOpen,
@@ -35,6 +36,8 @@ function MenuListModal({
   const navigate = useNavigate();
 
   const [showPayinModal, setShowPayinModal] = useState(false);
+    const [showAmountModal, setShowAmountModal] = useState(false);
+     const [enteredAmount, setEnteredAmount] = useState("")
   const [showPayOutModal, setShowPayOutModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showFirstWithdrawPopup, setShowFirstWithdrawPopup] = useState(false);
@@ -187,8 +190,15 @@ return (
           <p>My bet history</p>
         </button>
 
-        <button
+        {/* <button
           onClick={() => setShowPayinModal(true)}
+          className="flex items-center gap-3 px-4 py-3 hover:bg-[#44464A] transition"
+        >
+          <IoWalletOutline size={15} />
+          <p>Recharge</p>
+        </button> */}
+        <button
+          onClick={() => setShowAmountModal(true)}
           className="flex items-center gap-3 px-4 py-3 hover:bg-[#44464A] transition"
         >
           <IoWalletOutline size={15} />
@@ -238,9 +248,8 @@ return (
         <button
           onClick={() => {
             // console.log(profileData)
-                const referralCode =
-                  profileData?.referral_code || "defaultCode"; // fallback just in case
-                const referralLink = `${referral_url}${referralCode}`;
+            const referralCode = profileData?.referral_code || "defaultCode"; // fallback just in case
+            const referralLink = `${referral_url}${referralCode}`;
             const shareData = {
               title: "Play Chicken Road Game",
               text: "Check out this exciting Chicken Road Game and earn rewards! 🐔🔥",
@@ -268,10 +277,31 @@ return (
         </button>
       </div>
     </div>
-    {showPayinModal && (
+    {showAmountModal && (
+      <AmountModal
+        isOpen={showAmountModal}
+        profileData={profileData}
+        onClose={() => setShowAmountModal(false)}
+        onProceed={(amount) => {
+          setEnteredAmount(amount);
+          setShowAmountModal(false);
+          setShowPayinModal(true);
+        }}
+      />
+    )}
+    {/* {showPayinModal && (
       <PayinModal
         isOpen={showPayinModal}
         onClose={() => setShowPayinModal(false)}
+      />
+    )} */}
+    {showPayinModal && (
+      <PayinModal
+        isOpen={showPayinModal}
+        profileData={profileData}
+        onClose={() => setShowPayinModal(false)}
+        rechargeType="screenshot"
+        initialAmount={enteredAmount} // ✅ pass amount here
       />
     )}
     {showPayOutModal && (
@@ -308,6 +338,7 @@ return (
     {showWithdrawHistory && (
       <YourWithdrawHistoryModal
         isOpen={showWithdrawHistory}
+        setProfileRefresher={setProfileRefresher}
         title="My withdraw history"
         onClose={() => setShowWithdrawHistory(false)}
       />

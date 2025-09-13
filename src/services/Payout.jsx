@@ -172,46 +172,50 @@ import { FaTimes } from "react-icons/fa";
 import upi from "../assets/Payment/upi.png";
 import FirstWithdrawPopup from "../Modal/FirstWithdrawPopup";
 
-const Payout = ({ isOpen, onClose }) => {
+const Payout = ({ isOpen, onClose, setProfileRefresher }) => {
   if (!isOpen) return null;
 
-  const userid = localStorage.getItem("userid");
+  const userid = localStorage.getItem("userId");
   const { get } = useApi();
   const tabs = [2];
   const [type, setType] = useState(2);
   const [typeData, setTypeData] = useState(null);
   const [preview, setPreview] = useState("");
   const [availableAmount, setAvailableAmount] = useState(0);
+  const [minimum_withdraw, setMinimum_withdraw] = useState(0);
+  const [maximum_withdraw, setMaximum_withdraw] = useState(0);
+
 
   const fileInputRef = useRef(null);
 
-    const profileHandler = () => {
-      get(`${apis?.profile}${userid}`)
-        .then((res) => {
-          console.log(
-            "response profile for withdraw",
-            res.data.profile
-          );
-          if (res?.data?.status === true) {
-            const balance = res.data.profile.amount;
-            setAvailableAmount(balance);
-          }
-          
-          if (res?.data?.status === true) {
-            console.log("profile api close");
-            // if (typeof setProfileRefresher === "function") {
-            //   setProfileRefresher(true);
-            // }
-            // onClose();
-          }
-        })
-        .catch(console.error);
-    };
+  // console.log(`${apis?.profile}${userid}`);
+  const profileHandler = () => {
+    get(`${apis?.profile}${userid}`)
+      .then((res) => {
+        console.log("response profile for withdraw", res.data);
+        if (res?.data?.status === true || res?.data?.success === 200) {
+          console.log("hvhxfjbfkj");
+          const balance = res.data.data.total_wallet;
+          setAvailableAmount(balance);
+          setMaximum_withdraw(res.data.data.maximum_withdraw);
+          setMinimum_withdraw(res.data.data.minimum_withdraw);
+           setProfileRefresher(true);
+        }
 
- useEffect(()=>{
-      profileHandler()
-    },[])
+        if (res?.data?.status === true) {
+          console.log("profile api close");
+          // if (typeof setProfileRefresher === "function") {
+          //   setProfileRefresher(true);
+          // }
+          // onClose();
+        }
+      })
+      .catch(console.error);
+  };
 
+  useEffect(() => {
+    profileHandler();
+  }, []);
 
   const formik = useFormik({
     // initialValues: {
@@ -275,25 +279,43 @@ const Payout = ({ isOpen, onClose }) => {
       };
 
       console.log("withdraw payload:", payload);
-      if (Number(values.amount) > Number(availableAmount)) {
-        toast.error("Insufficient balance to withdraw this amount.");
+  
+      if (Number(values.amount) < Number(minimum_withdraw)) {
+        toast.error(`Minimum withdraw amount is ${minimum_withdraw}`);
         return;
       }
+      if (Number(values.amount) > Number(maximum_withdraw)) {
+        toast.error(`Maximum withdraw amount is ${maximum_withdraw}`);
+        return;
+      }
+          if (Number(values.amount) > Number(availableAmount)) {
+            toast.error("Insufficient balance to withdraw this amount.");
+            return;
+          }
       try {
         const res = await axios.post(`${apis?.withdrawal_request}`, payload);
-        toast.success("Form submitted successfully");
+        console.log("resvv",res)
+        if (
+          res?.data?.success === true ||
+          res?.data?.success === 200 ||
+          res?.data?.status === 200
+        ){
+          toast.success(res?.data?.message || "Form submitted successfully");
+        }
+          
         resetForm();
         setPreview("");
+        setProfileRefresher(true);
         if (fileInputRef.current) fileInputRef.current.value = null;
         onClose(); // close modal if needed
       } catch (err) {
         console.error(err);
-        alert("Failed to submit form");
+        // alert("Failed to submit form");
+        toast.error("Something went wrong!")
       }
     },
   });
   // console.log("Formik errors:", formik.errors);
-
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -318,7 +340,10 @@ const Payout = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative bg-[#2c2f4a] w-full max-w-80 max-h-[90vh] rounded-2xl shadow-2xl text-white flex flex-col">
+      <div
+        className="relative bg-[#2c2f4a] w-full max-w-80 max-h-[90vh] rounded-2xl shadow-2xl text-white flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close Button */}
         <button
           className="absolute top-3 right-4 text-gray-300 hover:text-red-400"
